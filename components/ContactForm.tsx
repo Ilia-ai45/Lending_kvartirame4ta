@@ -42,21 +42,13 @@ const ContactForm: React.FC<ContactFormProps> = ({ showExtended, calculatorData 
         setIsSubmitting(true);
         setSubmitError(null);
 
-        let message = `*Новая заявка с сайта!*\n\n*Имя:* ${name}\n*Телефон:* ${phone}`;
-
-        if (showExtended && calculatorData) {
-            message += `\n\n*--- Расчет по ипотеке ---*\n`;
-            message += `Стоимость: *${formatCurrency(calculatorData.propertyPrice)}*\n`;
-            message += `Первый взнос: *${formatCurrency(calculatorData.downPayment)}*\n`;
-            message += `Ежемесячный платеж: *${formatCurrency(calculatorData.monthlyPayment)}*\n`;
-            message += `Ставка: *${calculatorData.interestRate}%*\n`;
-            if (calculatorData.quickDealDiscount) {
-                message += `*🔥 Активирована скидка за быструю сделку! (-100 000 руб)*\n`;
-            }
-            message += `\n*--- Пожелания клиента ---*\n`;
-            message += `Кол-во комнат: *${rooms || 'Не указано'}*\n`;
-            message += `Приоритет: *${priority || 'Не указано'}*\n`;
-        }
+        const submissionData = {
+            name,
+            phone,
+            rooms,
+            priority,
+            ...(showExtended && calculatorData ? calculatorData : {})
+        };
 
         try {
             const response = await fetch('/api/sendMessage', {
@@ -64,7 +56,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ showExtended, calculatorData 
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ message }),
+                body: JSON.stringify(submissionData),
             });
 
             if (!response.ok) {
@@ -76,10 +68,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ showExtended, calculatorData 
             
             // Отправляем событие в Яндекс.Метрику при успешной отправке
             if (typeof window.ym === 'function') {
-                //ВАЖНО: Замените XXXXXX на ID вашего счетчика в Яндекс.Метрике
                 window.ym(97931388, 'reachGoal', 'FORM_SUBMIT_SUCCESS');
             }
-
 
         } catch (error: any) {
             console.error("Submit error:", error);
